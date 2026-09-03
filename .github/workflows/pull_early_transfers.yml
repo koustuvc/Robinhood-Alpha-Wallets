@@ -1,0 +1,33 @@
+name: Pull early token transfers
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 6 * * *"   # daily at 06:00 UTC; adjust or remove as needed
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install requests
+
+      - name: Run fetch script
+        run: python fetch_early_transfers.py
+        env:
+          BLOCKSCOUT_PRO_API_KEY: ${{ secrets.BLOCKSCOUT_PRO_API_KEY }}
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/early_transfers.json
+          git commit -m "Update early transfer data" || echo "No changes to commit"
+          git push
